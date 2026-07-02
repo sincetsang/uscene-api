@@ -1,0 +1,72 @@
+env = "staging"
+google_maps_key = "YOUR_GOOGLE_MAPS_KEY"
+
+wallet_jwt_secret = "YOUR_JWT_SECRET"
+
+openai_api_key = "YOUR_OPENAI_API_KEY"
+
+ip_location_db = "/path/to/IP2LOCATION-LITE-DB1.BIN"
+
+[log]
+level = "debug"
+file = ".logs/"
+stdout = true
+max_size = 20
+max_age = 7
+max_backups = 10
+formatter = "json"
+
+[db]
+driver = "mysql"
+dsn = "user:password@tcp(127.0.0.1:3306)/uscene?autocommit=true&multiStatements=true&charset=utf8mb4&parseTime=True&loc=UTC"
+
+[firmware]
+version = 1
+
+[redis]
+addrs = ["127.0.0.1:6379"]
+password = "YOUR_REDIS_PASSWORD"
+db = 10
+max_retries = 0
+
+[aws]
+aws_access_key_id = "YOUR_AWS_ACCESS_KEY_ID"
+aws_secret_access_key = "YOUR_AWS_SECRET_ACCESS_KEY"
+aws_storage_bucket_name = "your-bucket-name"
+aws_s3_region_name = "us-east-1"
+aws_s3_custom_domain = "https://your-cloudfront-domain.cloudfront.net"
+
+[apple_oauth]
+bundle_id = "com.uscene.app"
+
+[ali_sms]
+access_key_id = "YOUR_ALI_SMS_ACCESS_KEY_ID"
+access_key_secret = "YOUR_ALI_SMS_ACCESS_KEY_SECRET"
+sign_name = "YOUR_SMS_SIGN_NAME"
+template_code = "YOUR_SMS_TEMPLATE_CODE"
+
+[google_oauth.android]
+client_id = "YOUR_GOOGLE_OAUTH_ANDROID_CLIENT_ID"
+
+[ue]
+access_key_id = "YOUR_UE_ACCESS_KEY_ID"
+access_secret = "YOUR_UE_ACCESS_SECRET"
+ue_api_url = "http://client2.ue.shumaoheng.com"
+pay_code = "YOUR_UE_PAY_CODE"
+business_typeid = 70003
+my_domain = "https://api.test.uscene.ebunker.io"
+
+[believe]
+secret = "YOUR_BELIEVE_SECRET"
+domain = "https://believe-app-pub-gateway.believe8.com"
+
+[email]
+access_key_id = "YOUR_ALI_EMAIL_ACCESS_KEY_ID"
+access_key_secret = "YOUR_ALI_EMAIL_ACCESS_KEY_SECRET"
+account_name = "noreply@example.com"
+
+[google_oauth.web]
+client_id = "YOUR_GOOGLE_OAUTH_WEB_CLIENT_ID"
+
+[google_oauth.ios]
+client_id = "YOUR_GOOGLE_OAUTH_IOS_CLIENT_ID"

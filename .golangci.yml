@@ -1,0 +1,13 @@
+linters:
+  disable:
+    - unused
+    - errcheck
+    - gosimple
+    - govet
+    - staticcheck
+    - ineffassign
+    - deadcode
+
+issues:
+  exclude-dirs:
+    - ".*"  # 使用新的配置项替代 skip-dirs

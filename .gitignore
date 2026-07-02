@@ -1,0 +1,21 @@
+local*
+.idea*
+.env
+out
+out/*
+logs
+configs/*
+.cursorignore
+.vscode/*
+*/.DS_Store
+**/.DS_Store
+*/**/.DS_Store
+*/**/**/.DS_Store
+
+# local runtime files
+.trae_run.log
+.logs/
+uscene
+config.local.toml
+data_20260622.sql
+config.toml
