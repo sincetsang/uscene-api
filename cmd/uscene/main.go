@@ -161,6 +161,9 @@ func route(nu *nucl.Nucleus, app *echo.Echo) {
 	publicGroup.POST("/user/description", apiMiddleware.AppApiHandlerWrapper(updateUserDescription))
 
 	publicGroup.POST("/ue/notify", apiMiddleware.AppApiHandlerWrapper(notify))
+	publicGroup.POST("/ue/secret/open", apiMiddleware.AppApiHandlerWrapper(openSecret))
+	publicGroup.POST("/ue/secret/close", apiMiddleware.AppApiHandlerWrapper(closeSecret))
+	publicGroup.POST("/ue/secret/status", apiMiddleware.AppApiHandlerWrapper(getSecretStatus))
 	publicGroup.POST("/order/create", apiMiddleware.AppApiHandlerWrapper(createOrder))
 	publicGroup.GET("/order/pay_info", apiMiddleware.AppApiHandlerWrapper(getPayInfo))
 	publicGroup.GET("/order/list", apiMiddleware.AppApiHandlerWrapper(getOrderList))

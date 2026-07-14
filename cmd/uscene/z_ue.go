@@ -6,6 +6,7 @@ import (
 	"TMA/pkg/middleware"
 	"TMA/pkg/sdlog"
 	"TMA/pkg/sdrand"
+	"TMA/pkg/web/webapi"
 	"TMA/service/db"
 	"TMA/service/db/model"
 	"encoding/json"
@@ -322,6 +323,126 @@ func (u *UENoticeBaseV2) Execute(ec *middleware.AppRequestContext, body, accessk
 
 	sdlog.Infof("处理成功,订单号:%s,订单状态:%s", payHis.Orderno, payHis.Paystatus)
 	return true
+}
+
+// openSecret 处理UE免密支付绑定回调
+func openSecret(ec *middleware.AppRequestContext) error {
+	sdlog.Info("收到UE免密绑定回调")
+	body, _ := io.ReadAll(ec.Request().Body)
+	accessKeyID := ec.Request().Header.Get("accesskeyid")
+	signBody := ec.Request().Header.Get("signbody")
+	aesIV := ec.Request().Header.Get("aesiv")
+
+	sdlog.Infof("免密绑定回调参数: body=%s, accessKeyID=%s, signBody=%s, aesIV=%s", string(body), accessKeyID, signBody, aesIV)
+
+	// 校验 accesskeyid
+	if ec.Nu.Config.UE.AccessKeyId != accessKeyID {
+		sdlog.Errorf("accesskeyid不匹配: %s != %s", accessKeyID, ec.Nu.Config.UE.AccessKeyId)
+		return ec.String(200, "Failed")
+	}
+
+	// 解密验签
+	secretDto, err := ue_api_v2.GetResponse[models.SecretDto](
+		string(body),
+		signBody,
+		ec.Nu.UeParam[constants.SERVER_PUBLICKEY].(string),
+		ec.Nu.UeParam[constants.AES_KEY].(string),
+		aesIV,
+	)
+	if err != nil {
+		sdlog.Errorf("免密绑定回调解密失败: %v", err)
+		return ec.String(200, "Failed")
+	}
+	sdlog.Infof("免密绑定回调数据: opennodecode=%s, uenodecode=%s", secretDto.Opennodecode, secretDto.Uenodecode)
+
+	// opennodecode 即 user_id
+	userID, err := strconv.ParseInt(secretDto.Opennodecode, 10, 64)
+	if err != nil {
+		sdlog.Errorf("免密绑定回调 user_id 解析失败: opennodecode=%s", secretDto.Opennodecode)
+		return ec.String(200, "Failed")
+	}
+
+	// 存储绑定关系
+	err = db.BindUserUeSecret(ec.Nu.DB, userID, secretDto.Opennodecode, secretDto.Uenodecode)
+	if err != nil {
+		sdlog.Errorf("免密绑定存储失败: userID=%d, err=%v", userID, err)
+		return ec.String(200, "Failed")
+	}
+
+	sdlog.Infof("免密绑定成功: userID=%d, uenodecode=%s", userID, secretDto.Uenodecode)
+	return ec.String(200, "OK")
+}
+
+// closeSecret 处理UE免密支付解绑回调
+func closeSecret(ec *middleware.AppRequestContext) error {
+	sdlog.Info("收到UE免密解绑回调")
+	body, _ := io.ReadAll(ec.Request().Body)
+	accessKeyID := ec.Request().Header.Get("accesskeyid")
+	signBody := ec.Request().Header.Get("signbody")
+	aesIV := ec.Request().Header.Get("aesiv")
+
+	sdlog.Infof("免密解绑回调参数: body=%s, accessKeyID=%s, signBody=%s, aesIV=%s", string(body), accessKeyID, signBody, aesIV)
+
+	if ec.Nu.Config.UE.AccessKeyId != accessKeyID {
+		sdlog.Errorf("accesskeyid不匹配: %s != %s", accessKeyID, ec.Nu.Config.UE.AccessKeyId)
+		return ec.String(200, "Failed")
+	}
+
+	secretDto, err := ue_api_v2.GetResponse[models.SecretDto](
+		string(body),
+		signBody,
+		ec.Nu.UeParam[constants.SERVER_PUBLICKEY].(string),
+		ec.Nu.UeParam[constants.AES_KEY].(string),
+		aesIV,
+	)
+	if err != nil {
+		sdlog.Errorf("免密解绑回调解密失败: %v", err)
+		return ec.String(200, "Failed")
+	}
+	sdlog.Infof("免密解绑回调数据: opennodecode=%s, uenodecode=%s", secretDto.Opennodecode, secretDto.Uenodecode)
+
+	userID, err := strconv.ParseInt(secretDto.Opennodecode, 10, 64)
+	if err != nil {
+		sdlog.Errorf("免密解绑回调 user_id 解析失败: opennodecode=%s", secretDto.Opennodecode)
+		return ec.String(200, "Failed")
+	}
+
+	err = db.UnbindUserUeSecret(ec.Nu.DB, userID)
+	if err != nil {
+		sdlog.Errorf("免密解绑失败: userID=%d, err=%v", userID, err)
+		return ec.String(200, "Failed")
+	}
+
+	sdlog.Infof("免密解绑成功: userID=%d", userID)
+	return ec.String(200, "OK")
+}
+
+// getSecretStatus 查询用户UE免密支付绑定状态
+func getSecretStatus(ec *middleware.AppRequestContext) error {
+	userIDStr := ec.QueryParams().Get("user_id")
+	if userIDStr == "" {
+		return webapi.Error(common.ErrParam).Render(ec)
+	}
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		sdlog.Errorf("查询免密绑定状态 user_id 解析失败: %s", userIDStr)
+		return webapi.Error(common.ErrParam).Render(ec)
+	}
+
+	_, err = db.GetUserUeSecret(ec.Nu.DB, userID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return webapi.OK(map[string]interface{}{
+				"is_bound": false,
+			}).Render(ec)
+		}
+		sdlog.Errorf("查询免密绑定状态失败: userID=%d, err=%v", userID, err)
+		return webapi.Error(common.ErrService).Render(ec)
+	}
+
+	return webapi.OK(map[string]interface{}{
+		"is_bound": true,
+	}).Render(ec)
 }
 
 // 创建订单响应结构体
