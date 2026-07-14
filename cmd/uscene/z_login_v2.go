@@ -257,7 +257,7 @@ func emailLoginV2(ec *middleware.AppRequestContext) error {
 	// 验证码校验
 	codeKey := fmt.Sprintf("email:code:%s", req.Email)
 	code, err := ec.Nu.RedisClient.Get(ec.Request().Context(), codeKey).Result()
-	if err != nil || code != req.Captcha {
+	if !isStagingBypassEmailLogin(ec.Nu.Env, req.Email, req.Captcha) && (err != nil || code != req.Captcha) {
 		return webapi.Error(common.ErrCaptcha).Render(ec)
 	}
 
@@ -313,8 +313,10 @@ func emailLoginV2(ec *middleware.AppRequestContext) error {
 		return webapi.Error(common.ErrService).Render(ec)
 	}
 
-	// 删除验证码
-	ec.Nu.RedisClient.Del(ec.Request().Context(), codeKey)
+	// 测试环境万能验证码不依赖 Redis 验证码，登录后不做删除
+	if !isStagingBypassEmailLogin(ec.Nu.Env, req.Email, req.Captcha) {
+		ec.Nu.RedisClient.Del(ec.Request().Context(), codeKey)
+	}
 
 	return webapi.OK(token).Render(ec)
 }

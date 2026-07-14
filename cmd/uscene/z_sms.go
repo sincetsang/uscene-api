@@ -4,6 +4,7 @@ import (
 	"TMA/pkg/cache/redis"
 	"TMA/pkg/common"
 	"TMA/pkg/middleware"
+	"TMA/pkg/nucl"
 	"TMA/pkg/sderr"
 	"TMA/pkg/sdlog"
 	"TMA/pkg/sdrand"
@@ -37,6 +38,17 @@ type EmailLoginParam struct {
 	Email      string `json:"email"`
 	Captcha    string `json:"captcha"`
 	InviteCode string `json:"invite_code"`
+}
+
+const (
+	testEmailBypassAddress = "123456@test.com"
+	testEmailBypassCaptcha = "123456"
+)
+
+func isStagingBypassEmailLogin(env nucl.Env, email, captcha string) bool {
+	return env == nucl.EnvStaging &&
+		email == testEmailBypassAddress &&
+		captcha == testEmailBypassCaptcha
 }
 
 // 发送验证码
@@ -215,8 +227,8 @@ func emailCaptcha(ec *middleware.AppRequestContext) error {
 		code = sdrand.String(6, sdrand.Numbers)
 	}
 
-	if req.Email == "123456@test.com" {
-		code = "123456"
+	if ec.Nu.Env == nucl.EnvStaging && req.Email == testEmailBypassAddress {
+		code = testEmailBypassCaptcha
 	} else {
 		// 发送邮件
 		err = ec.Nu.SendEmail(req.Email, code)
@@ -248,7 +260,7 @@ func emailLogin(ec *middleware.AppRequestContext) error {
 	// 验证码校验
 	codeKey := fmt.Sprintf("email:code:%s", req.Email)
 	code, err := ec.Nu.RedisClient.Get(ec.Request().Context(), codeKey).Result()
-	if err != nil || code != req.Captcha {
+	if !isStagingBypassEmailLogin(ec.Nu.Env, req.Email, req.Captcha) && (err != nil || code != req.Captcha) {
 		return webapi.Error(common.ErrCaptcha).Render(ec)
 	}
 
@@ -304,8 +316,10 @@ func emailLogin(ec *middleware.AppRequestContext) error {
 		return webapi.Error(common.ErrService).Render(ec)
 	}
 
-	// 删除验证码
-	ec.Nu.RedisClient.Del(ec.Request().Context(), codeKey)
+	// 测试环境万能验证码不依赖 Redis 验证码，登录后不做删除
+	if !isStagingBypassEmailLogin(ec.Nu.Env, req.Email, req.Captcha) {
+		ec.Nu.RedisClient.Del(ec.Request().Context(), codeKey)
+	}
 
 	return webapi.OK(token).Render(ec)
 }
