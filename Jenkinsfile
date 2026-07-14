@@ -18,7 +18,7 @@ spec:
     - name: docker-sock
       mountPath: /var/run/docker.sock
   - name: kubectl
-    image: lachlanevenson/k8s-kubectl:v1.30.0
+    image: lachlanevenson/k8s-kubectl:v1.25.4
     command:
     - cat
     tty: true
