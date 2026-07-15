@@ -1,0 +1,118 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: uscene-test
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: uscene-api
+  namespace: uscene-test
+  labels:
+    app: uscene-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: uscene-api
+  template:
+    metadata:
+      labels:
+        app: uscene-api
+    spec:
+      containers:
+      - name: api
+        image: fsd-registry.ap-southeast-1.cr.aliyuncs.com/uscene/uscene-api:test-latest
+        imagePullPolicy: Always
+        command: ["./uscene", "-c", "/app/config/config.toml"]
+        ports:
+        - containerPort: 8050
+          protocol: TCP
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+        startupProbe:
+          httpGet:
+            path: /api/v1/ping
+            port: 8050
+          failureThreshold: 30
+          periodSeconds: 3
+        livenessProbe:
+          httpGet:
+            path: /api/v1/ping
+            port: 8050
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/v1/ping
+            port: 8050
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: config
+        configMap:
+          name: uscene-config
+      imagePullSecrets:
+      - name: acr-creds
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: uscene-cron
+  namespace: uscene-test
+  labels:
+    app: uscene-cron
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: uscene-cron
+  template:
+    metadata:
+      labels:
+        app: uscene-cron
+    spec:
+      containers:
+      - name: cron
+        image: fsd-registry.ap-southeast-1.cr.aliyuncs.com/uscene/uscene-api:test-latest
+        imagePullPolicy: Always
+        command: ["./cron", "-c", "/app/config/config.toml"]
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      volumes:
+      - name: config
+        configMap:
+          name: uscene-config
+      imagePullSecrets:
+      - name: acr-creds
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: uscene-api
+  namespace: uscene-test
+spec:
+  selector:
+    app: uscene-api
+  ports:
+  - port: 8050
+    targetPort: 8050
+    protocol: TCP
+  type: ClusterIP
