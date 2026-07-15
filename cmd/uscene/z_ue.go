@@ -419,17 +419,23 @@ func closeSecret(ec *middleware.AppRequestContext) error {
 
 // getSecretStatus 查询用户UE免密支付绑定状态
 func getSecretStatus(ec *middleware.AppRequestContext) error {
-	userIDStr := ec.QueryParams().Get("user_id")
-	if userIDStr == "" {
-		return webapi.Error(common.ErrParam).Render(ec)
-	}
-	userID, err := strconv.ParseInt(userIDStr, 10, 64)
-	if err != nil {
-		sdlog.Errorf("查询免密绑定状态 user_id 解析失败: %s", userIDStr)
-		return webapi.Error(common.ErrParam).Render(ec)
+	// 状态查询属于客户端登录态接口，优先使用 Token 中的用户 ID，
+	// 避免客户端通过修改 user_id 查询其他用户的绑定状态。
+	userID := ec.AuthData.User.ID
+	if userID <= 0 {
+		userIDStr := ec.QueryParams().Get("user_id")
+		if userIDStr == "" {
+			return webapi.Error(common.ErrUnauthorized).Render(ec)
+		}
+		parsedUserID, err := strconv.ParseInt(userIDStr, 10, 64)
+		if err != nil || parsedUserID <= 0 {
+			sdlog.Errorf("查询免密绑定状态 user_id 解析失败: %s", userIDStr)
+			return webapi.Error(common.ErrParam).Render(ec)
+		}
+		userID = parsedUserID
 	}
 
-	_, err = db.GetUserUeSecret(ec.Nu.DB, userID)
+	_, err := db.GetUserUeSecret(ec.Nu.DB, userID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return webapi.OK(map[string]interface{}{

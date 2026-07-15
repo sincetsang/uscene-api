@@ -40,7 +40,6 @@ var DontLoginUrls = map[string]bool{
 	"/api/v1/ue/notify":                true,
 	"/api/v1/ue/secret/open":           true,
 	"/api/v1/ue/secret/close":          true,
-	"/api/v1/ue/secret/status":         true,
 	"/api/v1/spot/category":            true,
 	"/api/v1/spot/list_v2":             true,
 	"/api/v1/spot/list_v4":             true,

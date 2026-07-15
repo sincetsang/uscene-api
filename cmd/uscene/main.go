@@ -163,6 +163,9 @@ func route(nu *nucl.Nucleus, app *echo.Echo) {
 	publicGroup.POST("/ue/notify", apiMiddleware.AppApiHandlerWrapper(notify))
 	publicGroup.POST("/ue/secret/open", apiMiddleware.AppApiHandlerWrapper(openSecret))
 	publicGroup.POST("/ue/secret/close", apiMiddleware.AppApiHandlerWrapper(closeSecret))
+	// 免密状态查询兼容客户端历史接口：统一复用同一个查询处理器。
+	publicGroup.GET("/ue/secret/status", apiMiddleware.AppApiHandlerWrapper(getSecretStatus))
+	publicGroup.GET("/ue/bind/status", apiMiddleware.AppApiHandlerWrapper(getSecretStatus))
 	publicGroup.POST("/ue/secret/status", apiMiddleware.AppApiHandlerWrapper(getSecretStatus))
 	publicGroup.POST("/order/create", apiMiddleware.AppApiHandlerWrapper(createOrder))
 	publicGroup.GET("/order/pay_info", apiMiddleware.AppApiHandlerWrapper(getPayInfo))
