@@ -54,7 +54,7 @@ access_secret = "YOUR_UE_ACCESS_SECRET"
 ue_api_url = "http://client2.ue.shumaoheng.com"
 pay_code = "YOUR_UE_PAY_CODE"
 business_typeid = 70003
-my_domain = "https://api.test.uscene.ebunker.io"
+my_domain = "https://api-test.uscene.cc"
 
 [believe]
 secret = "YOUR_BELIEVE_SECRET"
