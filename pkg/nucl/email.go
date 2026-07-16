@@ -24,7 +24,7 @@ func (nu *Nucleus) initEmail() error {
 			AccessKeyId:     tea.String(nu.Config.Email.AccessKeyID),
 			AccessKeySecret: tea.String(nu.Config.Email.AccessKeySecret),
 		}
-		config.Endpoint = tea.String("dm.aliyuncs.com")
+		config.Endpoint = tea.String("dm.ap-southeast-1.aliyuncs.com")
 
 		// 创建 client
 		client, err := dm.NewClient(config)
