@@ -461,11 +461,12 @@ func getSecretStatus(ec *middleware.AppRequestContext) error {
 		userID = parsedUserID
 	}
 
-	_, err := db.GetUserUeSecret(ec.Nu.DB, userID)
+	userUeSecret, err := db.GetUserUeSecret(ec.Nu.DB, userID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return webapi.OK(map[string]interface{}{
-				"is_bound": false,
+				"is_bound":   false,
+				"uenodecode": "",
 			}).Render(ec)
 		}
 		sdlog.Errorf("查询免密绑定状态失败: userID=%d, err=%v", userID, err)
@@ -473,7 +474,8 @@ func getSecretStatus(ec *middleware.AppRequestContext) error {
 	}
 
 	return webapi.OK(map[string]interface{}{
-		"is_bound": true,
+		"is_bound":   true,
+		"uenodecode": userUeSecret.Uenodecode,
 	}).Render(ec)
 }
 
