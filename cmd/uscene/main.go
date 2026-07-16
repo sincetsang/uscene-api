@@ -57,7 +57,7 @@ func main0(cc *cli.Context) error {
 		Snowflake:   true,
 		GormLogger:  "supermap_api",
 		ServiceName: "supermap_api",
-		UE:          false,
+		UE:          true,
 		Email:       true,
 		Believe:     true,
 	})

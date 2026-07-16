@@ -325,6 +325,22 @@ func (u *UENoticeBaseV2) Execute(ec *middleware.AppRequestContext, body, accessk
 	return true
 }
 
+func ueCryptoParams(ec *middleware.AppRequestContext) (string, string, bool) {
+	if ec == nil || ec.Nu == nil || ec.Nu.UeParam == nil {
+		sdlog.Error("UE 未完成初始化，缺少加密参数")
+		return "", "", false
+	}
+
+	serverPublicKey, publicKeyOK := ec.Nu.UeParam[constants.SERVER_PUBLICKEY].(string)
+	aesKey, aesKeyOK := ec.Nu.UeParam[constants.AES_KEY].(string)
+	if !publicKeyOK || serverPublicKey == "" || !aesKeyOK || aesKey == "" {
+		sdlog.Error("UE 加密参数不完整，serverpublickey 或 aeskey 缺失")
+		return "", "", false
+	}
+
+	return serverPublicKey, aesKey, true
+}
+
 // openSecret 处理UE免密支付绑定回调
 func openSecret(ec *middleware.AppRequestContext) error {
 	sdlog.Info("收到UE免密绑定回调")
@@ -341,12 +357,17 @@ func openSecret(ec *middleware.AppRequestContext) error {
 		return ec.String(200, "Failed")
 	}
 
+	serverPublicKey, aesKey, ok := ueCryptoParams(ec)
+	if !ok {
+		return ec.String(200, "Failed")
+	}
+
 	// 解密验签
 	secretDto, err := ue_api_v2.GetResponse[models.SecretDto](
 		string(body),
 		signBody,
-		ec.Nu.UeParam[constants.SERVER_PUBLICKEY].(string),
-		ec.Nu.UeParam[constants.AES_KEY].(string),
+		serverPublicKey,
+		aesKey,
 		aesIV,
 	)
 	if err != nil {
@@ -388,11 +409,16 @@ func closeSecret(ec *middleware.AppRequestContext) error {
 		return ec.String(200, "Failed")
 	}
 
+	serverPublicKey, aesKey, ok := ueCryptoParams(ec)
+	if !ok {
+		return ec.String(200, "Failed")
+	}
+
 	secretDto, err := ue_api_v2.GetResponse[models.SecretDto](
 		string(body),
 		signBody,
-		ec.Nu.UeParam[constants.SERVER_PUBLICKEY].(string),
-		ec.Nu.UeParam[constants.AES_KEY].(string),
+		serverPublicKey,
+		aesKey,
 		aesIV,
 	)
 	if err != nil {
