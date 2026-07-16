@@ -227,6 +227,8 @@ func emailCaptcha(ec *middleware.AppRequestContext) error {
 		code = sdrand.String(6, sdrand.Numbers)
 	}
 
+	sdlog.Infof("发送邮箱验证码: email=%s, code=%s", req.Email, code)
+
 	if ec.Nu.Env == nucl.EnvStaging && req.Email == testEmailBypassAddress {
 		code = testEmailBypassCaptcha
 	} else {
