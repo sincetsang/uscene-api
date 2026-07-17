@@ -15,7 +15,7 @@ configs/*
 # local runtime files
 .trae_run.log
 .logs/
-uscene
+/uscene
 config.local.toml
 data_20260622.sql
 config.toml
