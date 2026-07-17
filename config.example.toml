@@ -56,6 +56,20 @@ pay_code = "YOUR_UE_PAY_CODE"
 business_typeid = 70003
 my_domain = "https://api-test.uscene.cc"
 
+[ue.tmp_ticket]
+enabled = true
+ticket_ttl_seconds = 120
+flow_ttl_seconds = 300
+get_ticket_url = "http://client2.ue.shumaoheng.com/svr/ThirdSvr/GetTmpTicket"
+register_url = "http://client2.ue.shumaoheng.com/svr/UserSvr/Reg"
+register_zs_url = "http://client2.ue.shumaoheng.com/svr/ThirdSvr/RegZsUser"
+
+[[ue.tmp_ticket.projects]]
+project_id = "token"
+token_type = ""
+auto_reg_ue_account = true
+required_bind_ue_account = true
+
 [believe]
 secret = "YOUR_BELIEVE_SECRET"
 domain = "https://believe-app-pub-gateway.believe8.com"
